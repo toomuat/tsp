@@ -6,18 +6,6 @@ use std::{fs::File, io::BufRead, io::BufReader, io::Read};
 // const TSP_FILE: &str = "ts225.tsp.txt";
 const TSP_FILE: &str = "berlin52.tsp.txt";
 
-/*
-凡例の表示場所を変えたい．
-http://lowrank.net/gnuplot/legend.html
-set key outside
-
-凡例サイズ
-https://mio.yokohama/?p=103
-set key font'Arial,20'
-
-winwodsだとgnuplot画面でない…
-*/
-
 fn main() {
     let mut cities: Vec<(f32, f32)> = Vec::new();
     load_cities(&mut cities).unwrap();
@@ -48,68 +36,122 @@ fn main() {
         .write_all(cmd.as_bytes())
         .unwrap();
 
-    let commands: Vec<&str> = vec![
-        "set key outside\n",
-        "set key font'Arial,15'\n",
-        // "set parametric\n",
-        "set style data linespoints\n",
-        // "set term gif animate delay 1\n",
-        // "set output 'tsp.gif'\n\n",
-        "plot '-' pt 7 ps 1 lc rgb 'black'\n",
-    ];
+    // let commands: Vec<&str> = vec![
+    //     "set key outside\n",
+    //     "set key font'Arial,15'\n",
+    //     // "set parametric\n",
+    //     // "set style data linespoints\n",
+    //     // "set term gif animate delay 1\n",
+    //     // "set output 'tsp.gif'\n\n",
+    //     // "plot '-' pt 7 ps 1 lc rgb 'black', plot '-' pt 7 ps 1 lc rgb 'red'\n",
+    //     "plot '-' pt 7 ps 1 lc rgb 'black'\n",
+    // ];
 
-    for cmd in commands.iter() {
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
+    // for cmd in commands.iter() {
+    //     gp.stdin
+    //         .as_mut()
+    //         .unwrap()
+    //         .write_all(cmd.as_bytes())
+    //         .unwrap();
+    // }
 
+    // Plot all cities
+    // for i in 0..cities.len() {
+    //     let cmd = format!("{} {}\n", cities[i].0, cities[i].1);
+    //     let cmd: &str = &cmd;
+
+    //     gp.stdin
+    //         .as_mut()
+    //         .unwrap()
+    //         .write_all(cmd.as_bytes())
+    //         .unwrap();
+    // }
+    // // End data input
+    // gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+
+    // Plot optimal path
     let start_city = cities[0];
     let mut current_city = start_city;
-    let mut visit_cities: Vec<f32> = Vec::new();
+    let mut visit_cities: Vec<bool> = vec![false; cities.len()];
+    let mut optimal_path: Vec<(f32, f32)> = Vec::new();
+    let mut next_city: (f32, f32);
 
-    for i in 1..cities.len() {
-        let next_city = cities[i];
+    visit_cities[0] = true;
+    optimal_path.push(start_city);
+
+    println!("{} {}", start_city.0, start_city.1);
+
+    for i in 0..cities.len() - 1 {
+        let mut next_city = cities[i];
         let mut min_dist = f32::MAX;
-        let dist = distance(current_city, next_city);
+        let mut city_idx = 0;
 
-        for j in 0..cities.len() {}
+        for j in 1..cities.len() {
+            let dist = distance(current_city, cities[j]);
+            if dist < min_dist && !visit_cities[j] {
+                next_city = cities[j];
+                city_idx = j;
+                // println!("{} {}", next_city.0, next_city.1);
+            }
+        }
+
+        optimal_path.push(next_city);
+        current_city = next_city;
+        visit_cities[city_idx] = true;
+
+        let commands: Vec<&str> = vec![
+            "set key outside\n",
+            "set key font'Arial,15'\n",
+            "unset key\n",
+            // "set style line 1 lt 7\n",
+            // "set style data linespoints\n",
+            // "plot '-' pt 7 ps 1 lc rgb 'black'\n",
+            // "plot '-' lp lc rgb 'cyan' lw 2 pt 5\n",
+            // "plot '-' pt 7 ps 1 lc rgb 'black', '-' lp lc rgb 'cyan' lw 4 pt 5 ps 3\n",
+            // "plot '-' pt 7 ps 1 lc rgb 'black', '-' ls 1\n",
+            "plot '-' with point pointtype 7 linecolor rgb 'black',",
+            "'-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
+        ];
+        for cmd in commands.iter() {
+            gp.stdin
+                .as_mut()
+                .unwrap()
+                .write_all(cmd.as_bytes())
+                .unwrap();
+        }
+
+        // Plot all cities
+        for i in 0..cities.len() {
+            let cmd = format!("{} {}\n", cities[i].0, cities[i].1);
+            let cmd: &str = &cmd;
+
+            gp.stdin
+                .as_mut()
+                .unwrap()
+                .write_all(cmd.as_bytes())
+                .unwrap();
+        }
+        // End data input
+        gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+
+        for i in 0..optimal_path.len() {
+            let cmd = format!("{} {}\n", optimal_path[i].0, optimal_path[i].1);
+            // dbg!(cmd.clone());
+            let cmd: &str = &cmd;
+
+            gp.stdin
+                .as_mut()
+                .unwrap()
+                .write_all(cmd.as_bytes())
+                .unwrap();
+        }
+        // End data input
+        gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+
+        std::thread::sleep(std::time::Duration::from_millis(3000));
     }
 
-    for i in 0..cities.len() {
-        let cmd = format!("{} {}\n", cities[i].0, cities[i].1);
-        let cmd: &str = &cmd;
-
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
-    // End data input
-    gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
-
-    let cmd = format!("set terminal png; set output 'graph.png'; replot\n");
-    let cmd: &str = &cmd;
-    gp.stdin
-        .as_mut()
-        .unwrap()
-        .write_all(cmd.as_bytes())
-        .unwrap();
-
-    println!("bye");
-    std::thread::sleep(std::time::Duration::from_millis(3000));
-
-    // Enter something and close Gnuplot
-    // let mut input = String::new();
-    // std::io::stdin().read_line(&mut input).unwrap();
-
-    // Command::new("pkill")
-    //     .args(&["-x", "gnuplot_qt"])
-    //     .spawn()
-    //     .expect("pkill failed");
+    replot(&mut gp);
 }
 
 fn swap_cities(cities: &mut Vec<(f32, f32)>, i: usize, j: usize) {
@@ -158,4 +200,17 @@ fn load_cities(cities: &mut Vec<(f32, f32)>) -> std::io::Result<()> {
     }
 
     Ok(())
+}
+
+fn replot(gp: &mut std::process::Child) {
+    let cmd = format!("set terminal png; set output 'graph.png'; replot\n");
+    let cmd: &str = &cmd;
+    gp.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(cmd.as_bytes())
+        .unwrap();
+
+    println!("bye");
+    std::thread::sleep(std::time::Duration::from_millis(3000));
 }
