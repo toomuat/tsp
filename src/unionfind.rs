@@ -1,4 +1,4 @@
-struct UnionFind {
+pub struct UnionFind {
     parent: Vec<usize>,
     size: Vec<usize>,
 }
@@ -66,5 +66,6 @@ mod tests {
         assert_eq!(uf.root(2), 0);
         assert_eq!(uf.root(3), 0);
         assert_eq!(uf.root(4), 4);
+        assert_eq!(uf.size(3), 3);
     }
 }
