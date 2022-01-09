@@ -1,64 +1,54 @@
-use std::cell::RefCell;
-
 struct UnionFind {
-    parent: RefCell<Vec<usize>>,
-    size: RefCell<Vec<usize>>,
+    parent: Vec<usize>,
+    size: Vec<usize>,
 }
 
 impl UnionFind {
     pub fn new(n: usize) -> UnionFind {
-        let v = (0..n).collect::<Vec<usize>>();
         UnionFind {
-            parent: RefCell::new(v),
-            size: RefCell::new(vec![1; n]),
+            parent: (0..n).collect::<Vec<usize>>(),
+            size: vec![1; n],
         }
     }
 
-    pub fn root(&self, i: usize) -> usize {
-        let mut v = self.parent.borrow_mut();
-        if v[i] == i {
+    pub fn root(&mut self, i: usize) -> usize {
+        if self.parent[i] == i {
             return i;
         }
-        v[i] = self.root(v[i]);
-        v[i] as usize
+        self.parent[i] = self.root(self.parent[i]);
+        self.parent[i]
     }
 
-    /// Parent of a is b
-    pub fn add(&self, a: usize, b: usize) {
-        let mut v = self.parent.borrow_mut();
-        v[a] += b;
-    }
-
-    pub fn unite(&self, a: usize, b: usize) {
-        let mut parent_vec = self.parent.borrow_mut();
-        let mut size_vec = self.size.borrow_mut();
-        let a_root = self.root(parent_vec[a]);
-        let b_root = self.root(parent_vec[b]);
+    pub fn unite(&mut self, a: usize, b: usize) {
+        let mut a_root = self.root(self.parent[a]);
+        let mut b_root = self.root(self.parent[b]);
 
         if a_root == b_root {
             return;
         }
 
-        if self.size(a) < self.size(b) {
-            size_vec[a] += size_vec[b];
-            parent_vec[b] = a;
-        } else {
-            size_vec[b] += size_vec[a];
-            parent_vec[a] = b;
+        if self.size[a_root] < self.size[b_root] {
+            std::mem::swap(&mut a_root, &mut b_root);
         }
+
+        self.size[a_root] += self.size[b_root];
+        self.parent[b_root] = a_root;
     }
 
-    pub fn size(&self, i: usize) -> usize {
-        let v = self.size.borrow();
-        v[self.root(i)]
+    pub fn size(&mut self, i: usize) -> usize {
+        let parent_idx = self.root(i);
+        self.size[parent_idx]
+    }
+
+    pub fn same(&mut self, a: usize, b: usize) -> bool {
+        let a_root = self.root(self.parent[a]);
+        let b_root = self.root(self.parent[b]);
+        a_root == b_root
     }
 
     pub fn print(&self) {
-        let parent_vec = self.parent.borrow();
-        let size_vec = self.size.borrow();
-
-        dbg!(parent_vec);
-        dbg!(size_vec);
+        dbg!(&self.parent);
+        dbg!(&self.size);
     }
 }
 
@@ -69,9 +59,12 @@ mod tests {
     #[test]
     fn test_unionfind() {
         let mut uf = UnionFind::new(5);
-        uf.print();
-        uf.unite(0, 1);
-        uf.unite(1, 2);
-        (0..5).for_each(|i| println!("Root of {} is {}", i, &uf.root(i)));
+        uf.unite(0, 2);
+        uf.unite(2, 3);
+        assert_eq!(uf.root(0), 0);
+        assert_eq!(uf.root(1), 1);
+        assert_eq!(uf.root(2), 0);
+        assert_eq!(uf.root(3), 0);
+        assert_eq!(uf.root(4), 4);
     }
 }
