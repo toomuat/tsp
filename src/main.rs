@@ -3,6 +3,7 @@ use std::process::{Command, Stdio};
 use std::{fs::File, io::BufRead, io::BufReader, io::Read};
 
 mod common;
+mod greedy;
 mod nearest_neighbor;
 use common::distance;
 use nearest_neighbor::nearest_neighbor;
@@ -111,7 +112,4 @@ fn save_image(gp: &mut std::process::Child) {
         .unwrap()
         .write_all(cmd.as_bytes())
         .unwrap();
-
-    println!("bye");
-    std::thread::sleep(std::time::Duration::from_millis(3000));
 }
