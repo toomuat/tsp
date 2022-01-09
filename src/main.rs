@@ -2,6 +2,11 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use std::{fs::File, io::BufRead, io::BufReader, io::Read};
 
+mod common;
+mod nearest_neighbor;
+use common::distance;
+use nearest_neighbor::nearest_neighbor;
+
 // const TSP_FILE: &str = "kroC100.tsp.txt";
 // const TSP_FILE: &str = "ts225.tsp.txt";
 const TSP_FILE: &str = "berlin52.tsp.txt";
