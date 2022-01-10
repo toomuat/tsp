@@ -92,3 +92,32 @@ fn nearest_neighbor_plot(
     // End data input
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::{load_cities, save_image, setup_gnuplot, TSP_FILE_BERLIN52};
+
+    fn test_tsp(enable_gif: bool, tsp_file: &str) {
+        let file_name = "nearest_neighbor";
+        let mut cities: Vec<(f32, f32)> = Vec::new();
+        load_cities(&mut cities, tsp_file).unwrap();
+
+        let mut gp = setup_gnuplot(&mut cities, file_name, enable_gif);
+
+        nearest_neighbor(&mut gp, &mut cities);
+
+        // Save final result of optimal pass as an image
+        save_image(&mut gp, file_name);
+    }
+
+    #[test]
+    fn test_nearest_neighbor() {
+        test_tsp(true, TSP_FILE_BERLIN52);
+    }
+
+    #[test]
+    fn test_nearest_neighbor_no_gif() {
+        test_tsp(false, TSP_FILE_BERLIN52);
+    }
+}

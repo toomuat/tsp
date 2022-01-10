@@ -46,6 +46,7 @@ impl UnionFind {
         a_root == b_root
     }
 
+    #[allow(dead_code)]
     pub fn print(&self) {
         dbg!(&self.parent);
         dbg!(&self.size);

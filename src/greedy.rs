@@ -41,8 +41,13 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
     loop {
         let mut is_cycle = false;
 
+        if i == edges.len() - 1 {
+            break;
+        }
+
         // Check if there is cycle when connecting edges[i].1 and edges[i].2
-        // or vertex is already connected to two lines then we can't connect edges[i].1 ro edges[i].2
+        // or vertex is already connected to two lines
+        // then we can't connect edges[i].1 nor edges[i].2
         if uf.same(edges[i].1, edges[i].2) || uf.size(edges[i].1) > 1 || uf.size(edges[i].2) > 1 {
             is_cycle = true;
         }
@@ -74,7 +79,7 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
                 break;
             }
 
-            std::thread::sleep(std::time::Duration::from_millis(500));
+            std::thread::sleep(std::time::Duration::from_millis(200));
             // println!("@");
         }
         i += 1;
@@ -235,4 +240,33 @@ fn greedy_plot3(gp: &mut std::process::Child, file: &mut File) {
         .unwrap();
     // // End data input
     // gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::{load_cities, save_image, setup_gnuplot, TSP_FILE_BERLIN52};
+
+    fn test_tsp(enable_gif: bool, tsp_file: &str) {
+        let file_name = "greedy";
+        let mut cities: Vec<(f32, f32)> = Vec::new();
+        load_cities(&mut cities, tsp_file).unwrap();
+
+        let mut gp = setup_gnuplot(&mut cities, file_name, enable_gif);
+
+        greedy(&mut gp, &mut cities);
+
+        // Save final result of optimal pass as an image
+        save_image(&mut gp, file_name);
+    }
+
+    #[test]
+    fn test_greedy() {
+        test_tsp(true, TSP_FILE_BERLIN52);
+    }
+
+    #[test]
+    fn test_greedy_no_gif() {
+        test_tsp(false, TSP_FILE_BERLIN52);
+    }
 }
