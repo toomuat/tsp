@@ -6,12 +6,6 @@ pub const TSP_FILE_KROC100: &str = "kroC100.tsp.txt";
 pub const TSP_FILE_TS225: &str = "ts225.tsp.txt";
 pub const TSP_FILE_BERLIN52: &str = "berlin52.tsp.txt";
 
-pub fn swap_cities(cities: &mut Vec<(f32, f32)>, i: usize, j: usize) {
-    let tmp = cities[i];
-    cities[i] = cities[j];
-    cities[j] = tmp;
-}
-
 pub fn distance(v1: (f32, f32), v2: (f32, f32)) -> f32 {
     ((v1.0 - v2.0).powf(2.0) + (v1.1 - v2.1).powf(2.0)).sqrt()
 }
@@ -22,7 +16,10 @@ pub fn total_distance(cities: Vec<(f32, f32)>) -> f32 {
 
 // Save final result of caluculated optimal pass as an image
 pub fn save_image(gp: &mut std::process::Child, file_name: &str) {
-    let cmd = format!("set terminal png; set output '{}.png'; replot\n", file_name);
+    let cmd = format!(
+        "set terminal png; set output 'images/{}.png'; replot\n",
+        file_name
+    );
     let cmd: &str = &cmd;
     gp.stdin
         .as_mut()
@@ -65,7 +62,7 @@ pub fn setup_gnuplot(
         .unwrap();
 
     let mut commands: Vec<&str>;
-    let cmd = format!("set output '{}.gif'\n", file_name);
+    let cmd = format!("set output 'images/{}.gif'\n", file_name);
     let cmd: &str = &cmd;
     commands = vec!["unset key\n", "set term gif animate delay 1\n", cmd];
 
