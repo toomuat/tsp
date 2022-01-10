@@ -70,7 +70,7 @@ pub fn setup_gnuplot(
         commands = vec!["unset key\n"];
     }
 
-    for cmd in commands.iter() {
+    for cmd in commands {
         gp.stdin
             .as_mut()
             .unwrap()

@@ -41,15 +41,11 @@ fn nearest_neighbor_plot(
     cities: &mut Vec<(f32, f32)>,
     optimal_path: &mut Vec<(f32, f32)>,
 ) {
-    let start_city = cities[0];
-    let cities_len = cities.len();
-    let optimal_path_len = optimal_path.len();
-
     let commands: Vec<&str> = vec![
         "plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black',",
         "'-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
     ];
-    for cmd in commands.iter() {
+    for cmd in commands {
         gp.stdin
             .as_mut()
             .unwrap()
@@ -58,7 +54,7 @@ fn nearest_neighbor_plot(
     }
 
     // Plot all cities
-    for city in cities {
+    for city in cities.iter() {
         let cmd = format!("{} {}\n", city.0, city.1);
         let cmd: &str = &cmd;
 
@@ -72,7 +68,7 @@ fn nearest_neighbor_plot(
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 
     // Plot optimal pass
-    for city in optimal_path {
+    for city in optimal_path.iter() {
         let cmd = format!("{} {}\n", city.0, city.1);
         let cmd: &str = &cmd;
 
@@ -84,8 +80,8 @@ fn nearest_neighbor_plot(
     }
 
     // Connect start and end city to make cycle
-    if optimal_path_len == cities_len {
-        let cmd = format!("{} {}\n", start_city.0, start_city.1);
+    if optimal_path.len() == cities.len() {
+        let cmd = format!("{} {}\n", cities[0].0, cities[0].1);
         let cmd: &str = &cmd;
         gp.stdin
             .as_mut()

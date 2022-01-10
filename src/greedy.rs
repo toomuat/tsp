@@ -26,8 +26,8 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
     let mut uf = UnionFind::new(cities.len());
 
     let mut file = File::create("cities.txt").expect("Unable to create file");
-    for i in 0..cities.len() {
-        let line = format!("{} {}\n", cities[i].0, cities[i].1,);
+    for city in cities.iter() {
+        let line = format!("{} {}\n", city.0, city.1,);
         file.write_all(line.as_bytes())
             .expect("Unable to write data");
     }
@@ -85,7 +85,7 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
         "plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black',",
         "'-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
     ];
-    for cmd in commands.iter() {
+    for cmd in commands {
         gp.stdin
             .as_mut()
             .unwrap()
@@ -94,8 +94,8 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
     }
 
     // Plot all cities
-    for j in 0..cities.len() {
-        let cmd = format!("{} {}\n", cities[j].0, cities[j].1);
+    for city in cities.iter() {
+        let cmd = format!("{} {}\n", city.0, city.1);
         let cmd: &str = &cmd;
 
         gp.stdin
@@ -108,8 +108,8 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 
     // Plot optimal pass
-    for j in 0..optimal_path.len() {
-        let cmd = format!("{} {}\n", optimal_path[j].0, optimal_path[j].1);
+    for city in optimal_path.iter() {
+        let cmd = format!("{} {}\n", city.0, city.1);
         let cmd: &str = &cmd;
 
         gp.stdin
@@ -147,12 +147,6 @@ fn greedy_plot1(gp: &mut std::process::Child) {
 }
 
 fn greedy_plot2(gp: &mut std::process::Child) {
-    // let buf = BufReader::new(file);
-    // let lines: Vec<String> = buf
-    //     .lines()
-    //     .map(|l| l.expect("Could not parse line"))
-    //     .collect();
-
     let cmd = "replot 'edges.txt' using 1:2:($3-$1):($4-$2) with vectors lw 3 linetype 1 linecolor rgb 'cyan' nohead\n";
 
     gp.stdin
@@ -160,8 +154,6 @@ fn greedy_plot2(gp: &mut std::process::Child) {
         .unwrap()
         .write_all(cmd.as_bytes())
         .unwrap();
-    // // End data input
-    // gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 }
 
 #[cfg(test)]
