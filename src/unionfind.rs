@@ -67,6 +67,25 @@ mod tests {
         assert_eq!(uf.root(2), 0);
         assert_eq!(uf.root(3), 0);
         assert_eq!(uf.root(4), 4);
+
+        assert_eq!(uf.size(0), 3);
+        assert_eq!(uf.size(2), 3);
         assert_eq!(uf.size(3), 3);
+        assert_eq!(uf.size(1), 1);
+        assert_eq!(uf.size(4), 1);
+    }
+
+    #[test]
+    fn test_unite() {
+        let mut uf = UnionFind::new(5);
+        uf.unite(0, 1);
+        uf.unite(2, 3);
+        assert_eq!(uf.root(1), 0);
+        assert_eq!(uf.root(3), 2);
+
+        uf.unite(0, 2);
+        assert_eq!(uf.root(2), 0);
+
+        assert_eq!(uf.size(0), 4);
     }
 }
