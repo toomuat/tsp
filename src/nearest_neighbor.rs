@@ -13,7 +13,7 @@ pub fn nearest_neighbor(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32
     optimal_path.push(start_city);
 
     for _i in 0..cities.len() - 1 {
-        let mut min_dist = f32::MAX;
+        let mut min_dist = i32::MAX;
 
         for j in 1..cities.len() {
             let dist = distance(current_city, cities[j]);
@@ -28,9 +28,8 @@ pub fn nearest_neighbor(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32
         current_city = next_city;
         visit_cities[city_idx] = true;
 
+        #[cfg(feature = "plot")]
         plot(gp, cities, &mut optimal_path);
-
-        // std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     println!("Total distance: {}", total_distance(optimal_path));
@@ -89,6 +88,8 @@ fn plot(
 
     // End data input
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+
+    std::thread::sleep(std::time::Duration::from_millis(200));
 }
 
 #[cfg(test)]
@@ -114,15 +115,17 @@ mod tests {
         save_image(&mut gp, &file_name);
     }
 
+    // Gnuplot window cannot be seem with gif enabled
+
     #[test]
-    fn test_nearest_neighbor() {
+    fn all() {
         test_tsp(true, TSP_FILE_BERLIN52);
         test_tsp(true, TSP_FILE_KROC100);
         test_tsp(true, TSP_FILE_TS225);
     }
 
     #[test]
-    fn test_nearest_neighbor_no_gif() {
+    fn plot() {
         test_tsp(false, TSP_FILE_BERLIN52);
     }
 }

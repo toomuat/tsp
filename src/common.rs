@@ -6,12 +6,12 @@ pub const TSP_FILE_KROC100: &str = "kroC100.tsp.txt";
 pub const TSP_FILE_TS225: &str = "ts225.tsp.txt";
 pub const TSP_FILE_BERLIN52: &str = "berlin52.tsp.txt";
 
-pub fn distance(v1: (f32, f32), v2: (f32, f32)) -> f32 {
-    ((v1.0 - v2.0).powf(2.0) + (v1.1 - v2.1).powf(2.0)).sqrt()
+pub fn distance(v1: (f32, f32), v2: (f32, f32)) -> i32 {
+    ((v1.0 - v2.0).powf(2.0) + (v1.1 - v2.1).powf(2.0)).sqrt() as i32
 }
 
-pub fn total_distance(cities: Vec<(f32, f32)>) -> f32 {
-    (0..cities.len() - 1).fold(0.0, |sum, i| sum + distance(cities[i], cities[i + 1]))
+pub fn total_distance(cities: Vec<(f32, f32)>) -> i32 {
+    (0..cities.len() - 1).fold(0, |sum, i| sum + distance(cities[i], cities[i + 1]))
 }
 
 // Save final result of caluculated optimal pass as an image

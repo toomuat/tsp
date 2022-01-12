@@ -6,7 +6,7 @@ use std::io::Write;
 // Sort edges by distance
 pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
     // Distance and edge index
-    let mut edges: Vec<(f32, usize, usize)> = Vec::new();
+    let mut edges: Vec<(i32, usize, usize)> = Vec::new();
     let mut optimal_path: Vec<(f32, f32)> = Vec::new();
     let mut connected_edges: Vec<(usize, usize)> = Vec::new();
     let mut count_connected = vec![0; cities.len()];

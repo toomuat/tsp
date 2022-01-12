@@ -20,7 +20,7 @@ pub fn nearest_insertion(gp: &mut std::process::Child, cities: &mut Vec<(f32, f3
 
     // Loop over all city of current optimal path and check the distance with all the other city not included in optimal path and insert the minimum distance city to optimal path
     while !cities.is_empty() {
-        let mut min_dist = f32::MAX;
+        let mut min_dist = i32::MAX;
         let mut insert_idx = 0;
         let mut city_idx = 0;
 
@@ -41,9 +41,8 @@ pub fn nearest_insertion(gp: &mut std::process::Child, cities: &mut Vec<(f32, f3
         cities.remove(city_idx);
 
         // Plot all cities in points and current optimal path in lines
+        #[cfg(feature = "plot")]
         plot(gp, &mut optimal_path);
-
-        std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
     println!("Total distance: {}", total_distance(optimal_path));
@@ -71,6 +70,8 @@ fn plot(gp: &mut std::process::Child, optimal_path: &mut Vec<(f32, f32)>) {
     }
     // End data input
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+
+    std::thread::sleep(std::time::Duration::from_millis(200));
 }
 
 #[cfg(test)]
@@ -93,18 +94,21 @@ mod tests {
         nearest_insertion(&mut gp, &mut cities);
 
         // Save final result of optimal pass as an image
+        #[cfg(feature = "plot")]
         save_image(&mut gp, &file_name);
     }
 
+    // Gnuplot window cannot be seem with gif enabled
+
     #[test]
-    fn test_nearest_insertion() {
+    fn all() {
         test_tsp(true, TSP_FILE_BERLIN52);
         test_tsp(true, TSP_FILE_KROC100);
         test_tsp(true, TSP_FILE_TS225);
     }
 
     #[test]
-    fn test_nearest_insertion_no_gif() {
+    fn plot() {
         test_tsp(false, TSP_FILE_BERLIN52);
     }
 }
