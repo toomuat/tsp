@@ -3,11 +3,13 @@ use std::fs::File;
 use std::io::Write;
 
 pub fn nearest_insertion(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
-    let mut file = File::create("cities.txt").expect("Unable to create file");
-    for city in cities.iter() {
-        let line = format!("{} {}\n", city.0, city.1,);
-        file.write_all(line.as_bytes())
-            .expect("Unable to write data");
+    if cfg!(feature = "plot") {
+        let mut file = File::create("cities.txt").expect("Unable to create file");
+        for city in cities.iter() {
+            let line = format!("{} {}\n", city.0, city.1,);
+            file.write_all(line.as_bytes())
+                .expect("Unable to write data");
+        }
     }
 
     let start_city = cities[0];

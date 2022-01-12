@@ -16,11 +16,12 @@ fn main() {
     let tsp_name = tsp_file.split('.').collect::<Vec<&str>>()[0];
     let file_name = format!("{}_{}", file_name, tsp_name);
 
-    let mut gp = setup_gnuplot(&mut cities, &file_name, true);
+    let mut gp = setup_gnuplot(&mut cities, &file_name, false);
 
     greedy(&mut gp, &mut cities);
     // nearest_neighbor(&mut gp, &mut cities);
 
     // Save final result of optimal pass as an image
+    #[cfg(feature = "plot")]
     save_image(&mut gp, &file_name);
 }
