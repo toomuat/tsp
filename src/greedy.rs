@@ -19,102 +19,40 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
 
     // Distance and edge index
     let mut edges: Vec<(i32, usize, usize)> = Vec::new();
-    let mut optimal_path: Vec<(f32, f32)> = Vec::new();
     let mut connected_edges: Vec<(usize, usize)> = Vec::new();
     let mut count_connected = vec![0; cities.len()];
 
     for i in 0..cities.len() {
         for j in i..cities.len() {
             if i != j {
-                // println!("{} {}", i, j);
                 edges.push((distance(cities[i], cities[j]), i, j));
             }
         }
     }
     edges.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-    // dbg!(edges.len());
 
     let mut uf = UnionFind::new(cities.len());
 
-    let mut i = 0;
-    loop {
-        let mut is_cycle = false;
-
-        if i == edges.len() - 1 {
-            break;
-        }
-
-        // Check if there is cycle when connecting edges[i].1 and edges[i].2
+    for edge in edges.iter() {
+        // Check if there is cycle when connecting edge.1 and edge.2
         // or vertex is already connected to two lines
-        // then we can't connect edges[i].1 nor edges[i].2
-        if uf.same(edges[i].1, edges[i].2) || uf.size(edges[i].1) > 1 || uf.size(edges[i].2) > 1 {
-            is_cycle = true;
-        }
-
-        if !is_cycle {
-            connected_edges.push((edges[i].1, edges[i].2));
-
-            count_connected[edges[i].1] += 1;
-            count_connected[edges[i].2] += 1;
-
-            uf.unite(edges[i].1, edges[i].2);
-
-            #[cfg(feature = "plot")]
-            file.write_all(
-                format!(
-                    "{} {} {} {}\n",
-                    cities[edges[i].1].0,
-                    cities[edges[i].1].1,
-                    cities[edges[i].2].0,
-                    cities[edges[i].2].1
-                )
-                .as_bytes(),
-            )
-            .expect("Unable to write data");
-
-            #[cfg(feature = "plot")]
-            plot(gp);
-        }
-        i += 1;
-    }
-
-    // Connect city1 with city2
-    for (i, city1) in cities.iter().enumerate() {
-        let mut min_dist = i32::MAX;
-        let mut idx = i;
-
-        if count_connected[i] == 2 {
+        // then we can't connect edge.1 nor edge.2
+        if uf.same(edge.1, edge.2) || count_connected[edge.1] == 2 || count_connected[edge.2] == 2 {
             continue;
         }
 
-        for (j, city2) in cities.iter().enumerate() {
-            if i == j || uf.same(i, j) || count_connected[j] == 2 {
-                continue;
-            }
+        connected_edges.push((edge.1, edge.2));
 
-            let dist = distance(*city1, *city2);
-            if dist < min_dist {
-                min_dist = dist;
-                idx = j;
-            }
-        }
+        count_connected[edge.1] += 1;
+        count_connected[edge.2] += 1;
 
-        if i == idx {
-            continue;
-        }
-
-        count_connected[i] += 1;
-        count_connected[idx] += 1;
-
-        uf.unite(i, idx);
-
-        connected_edges.push((i, idx));
+        uf.unite(edge.1, edge.2);
 
         #[cfg(feature = "plot")]
         file.write_all(
             format!(
                 "{} {} {} {}\n",
-                cities[i].0, cities[i].1, cities[idx].0, cities[idx].1
+                cities[edge.1].0, cities[edge.1].1, cities[edge.2].0, cities[edge.2].1
             )
             .as_bytes(),
         )
@@ -124,7 +62,7 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
         plot(gp);
     }
 
-    // Connect remaining points and make a cycle
+    // Connect remaining two points and make a cycle
     let idx = count_connected
         .iter()
         .enumerate()
@@ -132,18 +70,21 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
         .map(|j| j.0)
         .collect::<Vec<usize>>();
 
-    uf.unite(idx[0], idx[1]);
-    connected_edges.push((idx[0], idx[1]));
+    if !idx.is_empty() {
+        // uf.unite(idx[0], idx[1]);
+        connected_edges.push((idx[0], idx[1]));
 
-    #[cfg(feature = "plot")]
-    file.write_all(
-        format!(
-            "{} {} {} {}\n",
-            cities[idx[0]].0, cities[idx[0]].1, cities[idx[1]].0, cities[idx[1]].1
+        #[cfg(feature = "plot")]
+        file.write_all(
+            format!(
+                "{} {} {} {}\n",
+                cities[idx[0]].0, cities[idx[0]].1, cities[idx[1]].0, cities[idx[1]].1
+            )
+            .as_bytes(),
         )
-        .as_bytes(),
-    )
-    .expect("Unable to write data");
+        .expect("Unable to write data");
+    }
+
     #[cfg(feature = "plot")]
     plot(gp);
 
@@ -197,7 +138,6 @@ mod tests {
     }
 
     // Gnuplot window cannot be seem with gif enabled
-
     #[test]
     fn all() {
         test_tsp(true, TSP_FILE_BERLIN52);
@@ -205,6 +145,8 @@ mod tests {
         test_tsp(true, TSP_FILE_TS225);
     }
 
+    // To show Gnuplot window, we need to enable plot feature
+    // `cargo test --features plot greedy::tests::plot -- --nocapture`
     #[test]
     fn plot() {
         test_tsp(false, TSP_FILE_BERLIN52);
