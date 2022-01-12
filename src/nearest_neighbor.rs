@@ -28,7 +28,7 @@ pub fn nearest_neighbor(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32
         current_city = next_city;
         visit_cities[city_idx] = true;
 
-        nearest_neighbor_plot(gp, cities, &mut optimal_path);
+        plot(gp, cities, &mut optimal_path);
 
         // std::thread::sleep(std::time::Duration::from_millis(200));
     }
@@ -36,22 +36,19 @@ pub fn nearest_neighbor(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32
     println!("Total distance: {}", total_distance(optimal_path));
 }
 
-fn nearest_neighbor_plot(
+fn plot(
     gp: &mut std::process::Child,
     cities: &mut Vec<(f32, f32)>,
     optimal_path: &mut Vec<(f32, f32)>,
 ) {
-    let commands: Vec<&str> = vec![
-        "plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black',",
-        "'-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
-    ];
-    for cmd in commands {
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
+    let cmd = "plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
+        '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n";
+
+    gp.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(cmd.as_bytes())
+        .unwrap();
 
     // Plot all cities
     for city in cities.iter() {
