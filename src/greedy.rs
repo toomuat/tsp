@@ -8,7 +8,8 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
     // Distance and edge index
     let mut edges: Vec<(f32, usize, usize)> = Vec::new();
     let mut optimal_path: Vec<(f32, f32)> = Vec::new();
-    let mut optimal_path_idx: Vec<(usize, usize)> = Vec::new();
+    let mut connected_edges: Vec<(usize, usize)> = Vec::new();
+    let mut count_connected = vec![0; cities.len()];
 
     for i in 0..cities.len() {
         for j in i..cities.len() {
@@ -20,8 +21,6 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
     }
     edges.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
     dbg!(edges.len());
-
-    greedy_plot1(gp);
 
     let mut uf = UnionFind::new(cities.len());
 
@@ -50,9 +49,10 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
         }
 
         if !is_cycle {
-            optimal_path_idx.push((edges[i].1, edges[i].2));
-            optimal_path.push((cities[edges[i].1].0, cities[edges[i].1].1));
-            optimal_path.push((cities[edges[i].2].0, cities[edges[i].2].1));
+            connected_edges.push((edges[i].1, edges[i].2));
+
+            count_connected[edges[i].1] += 1;
+            count_connected[edges[i].2] += 1;
 
             uf.unite(edges[i].1, edges[i].2);
 
@@ -66,88 +66,80 @@ pub fn greedy(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
             file.write_all(line.as_bytes())
                 .expect("Unable to write data");
 
-            greedy_plot1(gp);
-            greedy_plot2(gp);
+            plot(gp);
 
-            if optimal_path.len() == cities.len() {
-                // Add start point
-                optimal_path.push((cities[edges[0].1].0, cities[edges[0].1].1));
-                break;
-            }
-
-            std::thread::sleep(std::time::Duration::from_millis(200));
-            // println!("@");
+            // std::thread::sleep(std::time::Duration::from_millis(200));
         }
         i += 1;
     }
 
-    let commands: Vec<&str> = vec![
-        "plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black',",
-        "'-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
-    ];
-    for cmd in commands {
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
+    // Connect city1 with city2
+    for (i, city1) in cities.iter().enumerate() {
+        let mut min_dist = f32::MAX;
+        let mut idx = i;
+
+        if count_connected[i] == 2 {
+            continue;
+        }
+
+        for (j, city2) in cities.iter().enumerate() {
+            if i == j || uf.same(i, j) || count_connected[j] == 2 {
+                continue;
+            }
+
+            let dist = distance(*city1, *city2);
+            if dist < min_dist {
+                min_dist = dist;
+                idx = j;
+            }
+        }
+
+        if i == idx {
+            continue;
+        }
+
+        count_connected[i] += 1;
+        count_connected[idx] += 1;
+
+        uf.unite(i, idx);
+
+        optimal_path.push(cities[idx]);
+
+        let line = format!(
+            "{} {} {} {}\n",
+            cities[i].0, cities[i].1, cities[idx].0, cities[idx].1
+        );
+        file.write_all(line.as_bytes())
+            .expect("Unable to write data");
+
+        plot(gp);
+
+        // std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
-    // Plot all cities
-    for city in cities.iter() {
-        let cmd = format!("{} {}\n", city.0, city.1);
-        let cmd: &str = &cmd;
+    let idx = count_connected
+        .iter()
+        .enumerate()
+        .filter(|j| *j.1 == 1)
+        .map(|j| j.0)
+        .collect::<Vec<usize>>();
 
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
-    // End data input
-    gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+    uf.unite(idx[0], idx[1]);
+    let line = format!(
+        "{} {} {} {}\n",
+        cities[idx[0]].0, cities[idx[0]].1, cities[idx[1]].0, cities[idx[1]].1
+    );
+    file.write_all(line.as_bytes())
+        .expect("Unable to write data");
 
-    // Plot optimal pass
-    for city in optimal_path.iter() {
-        let cmd = format!("{} {}\n", city.0, city.1);
-        let cmd: &str = &cmd;
-
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
-
-    if optimal_path.len() == cities.len() {
-        let cmd = format!("{} {}\n", cities[0].0, cities[0].1);
-        let cmd: &str = &cmd;
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
-
-    // End data input
-    gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+    plot(gp);
 
     println!("Total distance: {}", total_distance(optimal_path));
 }
 
-// Plot all cities
-fn greedy_plot1(gp: &mut std::process::Child) {
-    let cmd = "plot 'cities.txt' with point pointtype 7 pointsize 2 linecolor rgb 'black'\n";
-
-    gp.stdin
-        .as_mut()
-        .unwrap()
-        .write_all(cmd.as_bytes())
-        .unwrap();
-}
-
-fn greedy_plot2(gp: &mut std::process::Child) {
-    let cmd = "replot 'edges.txt' using 1:2:($3-$1):($4-$2) with vectors lw 3 linetype 1 linecolor rgb 'cyan' nohead\n";
+fn plot(gp: &mut std::process::Child) {
+    let cmd = "plot 'cities.txt' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
+    'edges.txt' using 1:2:($3-$1):($4-$2) with vectors lw 3 linetype 1 linecolor rgb 'cyan' nohead\n";
 
     gp.stdin
         .as_mut()
