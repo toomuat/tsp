@@ -2,35 +2,38 @@ use crate::common::{distance, total_distance};
 use std::io::Write;
 
 pub fn nearest_neighbor(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
-    let start_city = cities[0];
-    let mut current_city = start_city;
-    let mut visit_cities: Vec<bool> = vec![false; cities.len()];
     let mut optimal_path: Vec<(f32, f32)> = Vec::new();
-    let mut next_city: (f32, f32) = cities[1];
-    let mut city_idx = 1;
+    let mut all_cities = cities.clone();
 
-    visit_cities[0] = true;
+    let start_city = cities.remove(0);
     optimal_path.push(start_city);
+    let mut current_city = start_city;
 
-    for _i in 0..cities.len() - 1 {
+    while !cities.is_empty() {
         let mut min_dist = i32::MAX;
 
-        for j in 1..cities.len() {
-            let dist = distance(current_city, cities[j]);
-            if dist < min_dist && !visit_cities[j] {
-                next_city = cities[j];
-                city_idx = j;
-                min_dist = dist;
+        let city_idx = cities.iter().enumerate().fold(0, |idx, city| {
+            let d = distance(current_city, *city.1);
+            if d < min_dist {
+                min_dist = d;
+                return city.0;
             }
-        }
+            idx
+        });
 
-        optimal_path.push(next_city);
-        current_city = next_city;
-        visit_cities[city_idx] = true;
+        let city = cities.remove(city_idx);
+        optimal_path.push(city);
+        current_city = city;
 
         #[cfg(feature = "plot")]
-        plot(gp, cities, &mut optimal_path);
+        plot(gp, &mut all_cities, &mut optimal_path);
     }
+
+    // Connect start and end city to make cycle
+    optimal_path.push(start_city);
+
+    #[cfg(feature = "plot")]
+    plot(gp, &mut all_cities, &mut optimal_path);
 
     println!("Total distance: {}", total_distance(optimal_path));
 }
@@ -75,17 +78,6 @@ fn plot(
             .unwrap();
     }
 
-    // Connect start and end city to make cycle
-    if optimal_path.len() == cities.len() {
-        let cmd = format!("{} {}\n", cities[0].0, cities[0].1);
-        let cmd: &str = &cmd;
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
-
     // End data input
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 
@@ -112,6 +104,7 @@ mod tests {
         nearest_neighbor(&mut gp, &mut cities);
 
         // Save final result of optimal pass as an image
+        #[cfg(feature = "plot")]
         save_image(&mut gp, &file_name);
     }
 
