@@ -35,7 +35,7 @@ pub fn nearest_neighbor(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32
     #[cfg(feature = "plot")]
     plot(gp, &mut all_cities, &mut optimal_path);
 
-    println!("Total distance: {}", total_distance(optimal_path));
+    println!("Total distance: {}", total_distance(&optimal_path));
 }
 
 fn plot(

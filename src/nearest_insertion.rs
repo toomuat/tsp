@@ -47,7 +47,7 @@ pub fn nearest_insertion(gp: &mut std::process::Child, cities: &mut Vec<(f32, f3
         plot(gp, &mut optimal_path);
     }
 
-    println!("Total distance: {}", total_distance(optimal_path));
+    println!("Total distance: {}", total_distance(&optimal_path));
 }
 
 fn plot(gp: &mut std::process::Child, optimal_path: &mut Vec<(f32, f32)>) {
