@@ -178,7 +178,7 @@ pub fn load_cities(cities: &mut Vec<(f32, f32)>, tsp_file: &str) -> std::io::Res
 #[macro_export]
 macro_rules! test_tsp {
     ($solver:ident, $name:expr, $enable_gif:expr, $tsp_file:expr) => {
-        let mut cities: Vec<(f32, f32)> = Vec::new();
+        let mut cities = vec![];
         load_cities(&mut cities, $tsp_file).unwrap();
 
         let tsp_name = $tsp_file.split('.').collect::<Vec<&str>>()[0];
@@ -196,6 +196,36 @@ macro_rules! test_tsp {
 
         // Save final result of optimal pass as an image
         save_image(&mut gp, &file_name, cities, visit_cities);
+    };
+}
+
+#[macro_export]
+macro_rules! bench_tsp {
+    ($b:expr, $solver:ident, $tsp_file:expr) => {
+        let mut cities = vec![];
+        load_cities(&mut cities, $tsp_file).unwrap();
+
+        // $solver takes Gnuplot command, but we don't need it in benchmark
+        // program so pass dummy date command.
+        let mut dummy = std::process::Command::new("date")
+            .spawn()
+            .expect("failed to execute date");
+
+        $b.iter(|| $solver(&mut dummy, &mut cities));
+
+        // $b.iter(|| {
+        //     let now = std::time::Instant::now();
+        //     let visit_cities = $solver(&mut dummy, &mut cities);
+        //     println!(
+        //         "Total distance: {}, Elapsed time: {}",
+        //         total_distance(&visit_cities),
+        //         now.elapsed().as_micros()
+        //     );
+        // });
+
+        // println!("{} ms", now.elapsed().as_millis());
+        // println!("{} us", now.elapsed().as_micros());
+        // println!("{} ns", now.elapsed().as_nanos());
     };
 }
 

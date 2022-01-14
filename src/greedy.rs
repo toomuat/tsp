@@ -7,14 +7,10 @@ use std::io::Write;
 pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
     let cities_idx = greedy_internal(gp, cities);
 
-    let visit_cities = cities_idx
+    cities_idx
         .iter()
         .map(|idx| cities[*idx])
-        .collect::<Vec<(f32, f32)>>();
-
-    println!("Total distance: {}", total_distance(&visit_cities));
-
-    visit_cities
+        .collect::<Vec<(f32, f32)>>()
 }
 
 pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
@@ -29,11 +25,7 @@ pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Ve
         .map(|idx| cities[*idx])
         .collect::<Vec<(f32, f32)>>();
 
-    let visit_cities = crate::two_opt::solver(gp, &mut visit_cities);
-
-    println!("Total distance: {}", total_distance(&visit_cities));
-
-    visit_cities
+    crate::two_opt::solver(gp, &mut visit_cities)
 }
 
 fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<usize> {
@@ -120,6 +112,9 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
     #[cfg(feature = "plot")]
     plot(gp);
 
+    // Code above created pairs of edges creating cycle.
+    // So we next need to get the sequence of visiting cities.
+
     // Sequence of visiting cities
     let mut visit_cities = vec![connected_edges[0].0, connected_edges[0].1];
 
@@ -192,6 +187,7 @@ fn plot2(gp: &mut std::process::Child, edges: &Vec<Vec<f32>>) {
 mod tests {
     use super::*;
     use crate::{
+        bench_tsp,
         common::{
             load_cities, save_image, setup_gnuplot, TSP_FILE_BERLIN52, TSP_FILE_KROC100,
             TSP_FILE_TS225,
@@ -248,7 +244,32 @@ mod tests {
 
     // Executed 301 times
     #[bench]
+    fn bench_berlin(b: &mut Bencher) {
+        bench_tsp!(b, solver, TSP_FILE_BERLIN52);
+    }
+
+    #[bench]
+    fn bench_kroc(b: &mut Bencher) {
+        bench_tsp!(b, solver, TSP_FILE_KROC100);
+    }
+
+    #[bench]
+    fn bench_ts(b: &mut Bencher) {
+        bench_tsp!(b, solver, TSP_FILE_TS225);
+    }
+
+    #[bench]
     fn bench_twoopt_berlin(b: &mut Bencher) {
-        b.iter(|| twoopt_berlin());
+        bench_tsp!(b, two_opt, TSP_FILE_BERLIN52);
+    }
+
+    #[bench]
+    fn bench_twoopt_kroc(b: &mut Bencher) {
+        bench_tsp!(b, two_opt, TSP_FILE_KROC100);
+    }
+
+    #[bench]
+    fn bench_twoopt_ts(b: &mut Bencher) {
+        bench_tsp!(b, two_opt, TSP_FILE_TS225);
     }
 }

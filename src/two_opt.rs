@@ -11,7 +11,7 @@ pub fn solver(gp: &mut std::process::Child, visit_cities: &mut Vec<(f32, f32)>) 
     // Swap
     let mut rng = thread_rng();
     // Number of iteration
-    let limit = 100_000_000;
+    let limit = 10_000_000;
     for k in 0..limit {
         let mut i = rng.gen_range(0..city_len);
         let mut j = rng.gen_range(0..city_len);
@@ -73,7 +73,10 @@ pub fn solver(gp: &mut std::process::Child, visit_cities: &mut Vec<(f32, f32)>) 
         }
     }
 
-    println!("Last update index: {}", last_update_idx);
+    // Connect start and end city to make cycle
+    visit_cities.push(visit_cities[0]);
+
+    // println!("Last update index: {}", last_update_idx);
 
     visit_cities.to_vec()
 }

@@ -3,10 +3,7 @@ use std::fs::File;
 use std::io::Write;
 
 pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
-    let visit_cities = nearest_insertion_internal(gp, cities);
-    println!("Total distance: {}", total_distance(&visit_cities));
-
-    visit_cities
+    nearest_insertion_internal(gp, cities)
 }
 
 pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
@@ -14,11 +11,7 @@ pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Ve
     // In nearest_insertion_internal, start city is pushed at tail to make circle so remove it.
     visit_cities.pop();
 
-    let visit_cities = crate::two_opt::solver(gp, &mut visit_cities);
-
-    println!("Total distance: {}", total_distance(&visit_cities));
-
-    visit_cities
+    crate::two_opt::solver(gp, &mut visit_cities)
 }
 
 fn nearest_insertion_internal(
@@ -79,6 +72,7 @@ fn nearest_insertion_internal(
 mod tests {
     use super::*;
     use crate::{
+        bench_tsp,
         common::{
             load_cities, save_image, setup_gnuplot, TSP_FILE_BERLIN52, TSP_FILE_KROC100,
             TSP_FILE_TS225,
@@ -144,7 +138,32 @@ mod tests {
 
     // Executed 301 times
     #[bench]
+    fn bench_berlin(b: &mut Bencher) {
+        bench_tsp!(b, solver, TSP_FILE_BERLIN52);
+    }
+
+    #[bench]
+    fn bench_kroc(b: &mut Bencher) {
+        bench_tsp!(b, solver, TSP_FILE_KROC100);
+    }
+
+    #[bench]
+    fn bench_ts(b: &mut Bencher) {
+        bench_tsp!(b, solver, TSP_FILE_TS225);
+    }
+
+    #[bench]
     fn bench_twoopt_berlin(b: &mut Bencher) {
-        b.iter(|| twoopt_berlin());
+        bench_tsp!(b, two_opt, TSP_FILE_BERLIN52);
+    }
+
+    #[bench]
+    fn bench_twoopt_kroc(b: &mut Bencher) {
+        bench_tsp!(b, two_opt, TSP_FILE_KROC100);
+    }
+
+    #[bench]
+    fn bench_twoopt_ts(b: &mut Bencher) {
+        bench_tsp!(b, two_opt, TSP_FILE_TS225);
     }
 }
