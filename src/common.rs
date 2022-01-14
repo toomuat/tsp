@@ -23,8 +23,8 @@ pub fn save_image(
 ) {
     let cmd = format!(
         "set terminal png; set output 'images/{}.png'; \
-            plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
-            '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
+        plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
+        '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
         file_name
     );
     gp.stdin
@@ -33,40 +33,39 @@ pub fn save_image(
         .write_all(cmd.as_bytes())
         .unwrap();
 
-    replot(gp, cities, visit_cities);
+    replot(gp, &cities, &visit_cities);
 }
 
 pub fn replot(
     gp: &mut std::process::Child,
-    cities: Vec<(f32, f32)>,
-    visit_cities: Vec<(f32, f32)>,
+    cities: &Vec<(f32, f32)>,
+    visit_cities: &Vec<(f32, f32)>,
 ) {
     // Plot all cities
+    let mut cmd: String = "".to_owned();
     for city in cities.iter() {
-        let cmd = format!("{} {}\n", city.0, city.1);
-        let cmd: &str = &cmd;
-
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
+        let c = format!("{} {}\n", city.0, city.1);
+        cmd.push_str(&c);
     }
+    gp.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(cmd.as_bytes())
+        .unwrap();
     // End data input
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 
     // Plot optimal pass
+    cmd = "".to_owned();
     for city in visit_cities.iter() {
-        let cmd = format!("{} {}\n", city.0, city.1);
-        let cmd: &str = &cmd;
-
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
+        let c = format!("{} {}\n", city.0, city.1);
+        cmd.push_str(&c);
     }
-
+    gp.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(cmd.as_bytes())
+        .unwrap();
     // End data input
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 }
@@ -80,6 +79,8 @@ pub fn setup_gnuplot(
 ) -> std::process::Child {
     let max_x: i32 = cities.iter().map(|t| t.0 as i32).max().unwrap();
     let max_y: i32 = cities.iter().map(|t| t.1 as i32).max().unwrap();
+    let min_x: i32 = cities.iter().map(|t| t.0 as i32).min().unwrap();
+    let min_y: i32 = cities.iter().map(|t| t.1 as i32).min().unwrap();
 
     let mut gp = Command::new("gnuplot")
         .stdin(Stdio::piped())
@@ -87,12 +88,15 @@ pub fn setup_gnuplot(
         .expect("failed to execute gnuplot");
 
     // Slightly enlarge the x and y range covering the data.
+    let xrange = max_x - min_x;
+    let yrange = max_y - min_y;
+    let max_x = max_x + xrange / 7;
+    let min_x = min_x - xrange / 7;
+    let max_y = max_y + yrange / 7;
+    let min_y = min_y - yrange / 7;
     let mut cmd = format!(
         "set xrange [{}:{}]; set yrange [{}:{}]\n",
-        -max_x / 7,
-        max_x + max_x / 7,
-        -max_y / 7,
-        max_y + max_y / 7
+        min_x, max_x, min_y, max_y
     );
 
     gp.stdin
@@ -165,9 +169,37 @@ macro_rules! test_tsp {
 
         let mut gp = setup_gnuplot(&mut cities, &file_name, $enable_gif);
 
+        let now = std::time::Instant::now();
+
         let visit_cities = $solver(&mut gp, &mut cities);
+
+        // println!("{}", now.elapsed().as_millis());
+        println!("{}", now.elapsed().as_micros());
+        // println!("{}", now.elapsed().as_nanos());
 
         // Save final result of optimal pass as an image
         save_image(&mut gp, &file_name, cities, visit_cities);
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn replot() {
+        let mut cities = vec![(-50., -50.), (-50., 0.), (-50., 50.), (50., 50.)];
+        let visit_cities = vec![
+            (-50., -50.),
+            (-50., 0.),
+            (-50., 50.),
+            (50., 50.),
+            (-50., -50.),
+        ];
+        let file_name = "test_replot";
+
+        let mut gp = setup_gnuplot(&mut cities, file_name, false);
+
+        save_image(&mut gp, file_name, cities, visit_cities);
+    }
 }

@@ -55,7 +55,7 @@ fn plot(
         .write_all(cmd.as_bytes())
         .unwrap();
 
-    replot(gp, cities.to_vec(), visit_cities.to_vec());
+    replot(gp, cities, visit_cities);
 
     std::thread::sleep(std::time::Duration::from_millis(200));
 }

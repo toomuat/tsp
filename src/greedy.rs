@@ -25,6 +25,7 @@ pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Ve
     let city_len = cities_idx.len();
 
     let mut visit_cities = cities_idx
+    // greedy_internal returns index of cities so convert to coordinate
         .iter()
         .map(|idx| cities[*idx])
         .collect::<Vec<(f32, f32)>>();
@@ -237,7 +238,7 @@ fn plot(gp: &mut std::process::Child) {
     std::thread::sleep(std::time::Duration::from_millis(20));
 }
 
-fn plot2(gp: &mut std::process::Child, edges: &mut Vec<Vec<f32>>) {
+fn plot2(gp: &mut std::process::Child, edges: &Vec<Vec<f32>>) {
     let cmd = "plot 'cities.txt' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
     '-' using 1:2:($3-$1):($4-$2) with vectors lw 3 linetype 1 linecolor rgb 'cyan' nohead\n";
 
@@ -247,16 +248,16 @@ fn plot2(gp: &mut std::process::Child, edges: &mut Vec<Vec<f32>>) {
         .write_all(cmd.as_bytes())
         .unwrap();
 
+    let mut cmd = "".to_owned();
     for edge in edges.iter() {
-        let cmd = format!("{} {} {} {}\n", edge[0], edge[1], edge[2], edge[3]);
-        // let cmd: &str = &cmd;
-
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
+        let c = format!("{} {} {} {}\n", edge[0], edge[1], edge[2], edge[3]);
+        cmd.push_str(&c);
     }
+    gp.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(cmd.as_bytes())
+        .unwrap();
     // End data input
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 
