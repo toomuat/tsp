@@ -190,9 +190,9 @@ macro_rules! test_tsp {
 
         let visit_cities = $solver(&mut gp, &mut cities);
 
-        // println!("{}", now.elapsed().as_millis());
-        println!("{}", now.elapsed().as_micros());
-        // println!("{}", now.elapsed().as_nanos());
+        // println!("{} ms", now.elapsed().as_millis());
+        println!("{} us", now.elapsed().as_micros());
+        // println!("{} ns", now.elapsed().as_nanos());
 
         // Save final result of optimal pass as an image
         save_image(&mut gp, &file_name, cities, visit_cities);

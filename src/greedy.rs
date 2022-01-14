@@ -1,5 +1,3 @@
-use rand::{thread_rng, Rng};
-
 use crate::common::{distance, total_distance};
 use crate::unionfind::UnionFind;
 use std::fs::File;
@@ -151,12 +149,6 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
     visit_cities
 }
 
-// fn total_distance(cities: &mut Vec<(f32, f32)>, edges: Vec<(usize, usize)>) -> i32 {
-//     edges
-//         .iter()
-//         .fold(0, |sum, i| sum + distance(cities[i.0], cities[i.1]))
-// }
-
 fn plot(gp: &mut std::process::Child) {
     let cmd = "plot 'cities.txt' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
     'edges.txt' using 1:2:($3-$1):($4-$2) with vectors lw 3 linetype 1 linecolor rgb 'cyan' nohead\n";
@@ -222,6 +214,8 @@ mod tests {
     fn berlin() {
         test_tsp!(solver, "greedy", false, TSP_FILE_BERLIN52);
     }
+
+    // Debug mode is slow so 2 opt tests are recommended to run in release mode
 
     #[test]
     fn twoopt_berlin() {

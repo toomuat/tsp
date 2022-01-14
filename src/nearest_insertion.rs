@@ -85,6 +85,7 @@ mod tests {
         },
         test_tsp,
     };
+    use test::Bencher;
 
     // Gnuplot window cannot be seem with gif enabled
 
@@ -99,6 +100,8 @@ mod tests {
     fn plot() {
         test_tsp!(solver, "nearest_insertion", false, TSP_FILE_BERLIN52);
     }
+
+    // Debug mode is slow so 2 opt tests are recommended to run in release mode
 
     #[test]
     fn twoopt_berlin() {
@@ -118,5 +121,30 @@ mod tests {
     #[test]
     fn twoopt_ts() {
         test_tsp!(two_opt, "nearest_insertion_twoopt", false, TSP_FILE_TS225);
+    }
+
+    #[test]
+    fn twoopt_all() {
+        test_tsp!(
+            two_opt,
+            "nearest_insertion_twoopt",
+            false,
+            TSP_FILE_BERLIN52
+        );
+        test_tsp!(two_opt, "nearest_insertion_twoopt", false, TSP_FILE_KROC100);
+        test_tsp!(two_opt, "nearest_insertion_twoopt", false, TSP_FILE_TS225);
+    }
+
+    #[test]
+    fn twoopt_gif_all() {
+        test_tsp!(two_opt, "nearest_insertion_twoopt", true, TSP_FILE_BERLIN52);
+        test_tsp!(two_opt, "nearest_insertion_twoopt", true, TSP_FILE_KROC100);
+        test_tsp!(two_opt, "nearest_insertion_twoopt", true, TSP_FILE_TS225);
+    }
+
+    // Executed 301 times
+    #[bench]
+    fn bench_twoopt_berlin(b: &mut Bencher) {
+        b.iter(|| twoopt_berlin());
     }
 }
