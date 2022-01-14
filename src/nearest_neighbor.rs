@@ -2,12 +2,12 @@ use crate::common::{distance, replot, total_distance};
 use std::io::Write;
 
 pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
-    let mut optimal_path: Vec<(f32, f32)> = Vec::new();
+    let mut visit_cities: Vec<(f32, f32)> = Vec::new();
     #[cfg(feature = "plot")]
     let mut all_cities = cities.clone();
 
     let start_city = cities.remove(0);
-    optimal_path.push(start_city);
+    visit_cities.push(start_city);
     let mut current_city = start_city;
 
     while !cities.is_empty() {
@@ -23,28 +23,28 @@ pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec
         });
 
         let city = cities.remove(city_idx);
-        optimal_path.push(city);
+        visit_cities.push(city);
         current_city = city;
 
         #[cfg(feature = "plot")]
-        plot(gp, &mut all_cities, &mut optimal_path);
+        plot(gp, &mut all_cities, &mut visit_cities);
     }
 
     // Connect start and end city to make cycle
-    optimal_path.push(start_city);
+    visit_cities.push(start_city);
 
     #[cfg(feature = "plot")]
-    plot(gp, &mut all_cities, &mut optimal_path);
+    plot(gp, &mut all_cities, &mut visit_cities);
 
-    println!("Total distance: {}", total_distance(&optimal_path));
+    println!("Total distance: {}", total_distance(&visit_cities));
 
-    optimal_path
+    visit_cities
 }
 
 fn plot(
     gp: &mut std::process::Child,
     cities: &mut Vec<(f32, f32)>,
-    optimal_path: &mut Vec<(f32, f32)>,
+    visit_cities: &mut Vec<(f32, f32)>,
 ) {
     let cmd = "plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
         '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n";
@@ -55,7 +55,7 @@ fn plot(
         .write_all(cmd.as_bytes())
         .unwrap();
 
-    replot(gp, cities.to_vec(), optimal_path.to_vec());
+    replot(gp, cities.to_vec(), visit_cities.to_vec());
 
     std::thread::sleep(std::time::Duration::from_millis(200));
 }

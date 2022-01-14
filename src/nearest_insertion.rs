@@ -13,12 +13,12 @@ pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec
     }
 
     let start_city = cities[0];
-    let mut optimal_path: Vec<(f32, f32)> = Vec::new();
+    let mut visit_cities: Vec<(f32, f32)> = Vec::new();
     for _ in 0..3 {
-        optimal_path.push((cities[0].0, cities[0].1));
-        optimal_path.remove(0);
+        visit_cities.push((cities[0].0, cities[0].1));
+        visit_cities.remove(0);
     }
-    optimal_path.push(start_city);
+    visit_cities.push(start_city);
 
     // Loop over all city of current optimal path and check the distance with all the other city not included in optimal path and insert the minimum distance city to optimal path
     while !cities.is_empty() {
@@ -26,7 +26,7 @@ pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec
         let mut insert_idx = 0;
         let mut city_idx = 0;
 
-        for (i, visit_city) in optimal_path.iter().enumerate() {
+        for (i, visit_city) in visit_cities.iter().enumerate() {
             for (j, city) in cities.iter().enumerate() {
                 let dist = distance(*visit_city, *city);
 
@@ -39,20 +39,20 @@ pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec
         }
 
         //  Insert closest city to cities in current optimal path
-        optimal_path.insert(insert_idx, cities[city_idx]);
+        visit_cities.insert(insert_idx, cities[city_idx]);
         cities.remove(city_idx);
 
         // Plot all cities in points and current optimal path in lines
         #[cfg(feature = "plot")]
-        plot(gp, &mut optimal_path);
+        plot(gp, &mut visit_cities);
     }
 
-    println!("Total distance: {}", total_distance(&optimal_path));
+    println!("Total distance: {}", total_distance(&visit_cities));
 
-    optimal_path
+    visit_cities
 }
 
-fn plot(gp: &mut std::process::Child, optimal_path: &mut Vec<(f32, f32)>) {
+fn plot(gp: &mut std::process::Child, visit_cities: &mut Vec<(f32, f32)>) {
     let cmd = "plot 'cities.txt' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
         '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n";
 
@@ -62,7 +62,7 @@ fn plot(gp: &mut std::process::Child, optimal_path: &mut Vec<(f32, f32)>) {
         .write_all(cmd.as_bytes())
         .unwrap();
 
-    for city in optimal_path.iter() {
+    for city in visit_cities.iter() {
         let cmd = format!("{} {}\n", city.0, city.1);
         let cmd: &str = &cmd;
 

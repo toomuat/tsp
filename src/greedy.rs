@@ -9,7 +9,7 @@ use std::io::Write;
 pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
     let cities_idx = greedy_internal(gp, cities);
 
-    let mut visit_cities = cities_idx
+    let visit_cities = cities_idx
         .iter()
         .map(|idx| cities[*idx])
         .collect::<Vec<(f32, f32)>>();
@@ -31,8 +31,9 @@ pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Ve
 
     // Swap
     let mut rng = thread_rng();
-    let mut n = 100_000;
-    while n > 0 {
+    // Number of iteration
+    let mut limit = 10_000_000;
+    while limit > 0 {
         let mut i = rng.gen_range(0..city_len);
         let mut j = rng.gen_range(0..city_len);
 
@@ -63,7 +64,7 @@ pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Ve
             let mut v = visit_cities.clone();
             v.push(v[0]);
             let new = total_distance(&v);
-            println!("[{}] {}", n, new);
+            println!("[{}] {}", limit, new);
 
             #[cfg(feature = "plot")]
             {
@@ -89,8 +90,11 @@ pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Ve
                 plot2(gp, &mut edges);
             }
         }
-        n -= 1;
+
+        limit -= 1;
     }
+
+    dbg!(limit);
 
     // Connect start and end city to make cycle
     // cities_idx.push(cities_idx[0]);
@@ -186,10 +190,8 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
     plot(gp);
 
     // Sequence of visiting cities
-    let mut visit_cities = Vec::new();
+    let mut visit_cities = vec![connected_edges[0].0, connected_edges[0].1];
 
-    visit_cities.push(connected_edges[0].0);
-    visit_cities.push(connected_edges[0].1);
     connected_edges.remove(0);
 
     while !connected_edges.is_empty() {
@@ -198,7 +200,7 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
         let city = connected_edges
             .iter()
             .enumerate()
-            .filter(|(idx, city)| city.0 == last_city || city.1 == last_city)
+            .filter(|(_idx, city)| city.0 == last_city || city.1 == last_city)
             .map(|(idx, city)| {
                 if city.0 == last_city {
                     return (idx, city.1);
@@ -271,6 +273,7 @@ mod tests {
         },
         test_tsp,
     };
+    use test::Bencher;
 
     // Gnuplot window cannot be seem with gif enabled
     #[test]
@@ -288,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn twoopt_plot() {
+    fn twoopt_berlin() {
         test_tsp!(two_opt, "greedy_twoopt", false, TSP_FILE_BERLIN52);
     }
 
@@ -300,9 +303,14 @@ mod tests {
     }
 
     #[test]
-    fn twoopt_plot_gif_all() {
+    fn twoopt_gif_all() {
         test_tsp!(two_opt, "greedy_twoopt", true, TSP_FILE_BERLIN52);
         test_tsp!(two_opt, "greedy_twoopt", true, TSP_FILE_KROC100);
         test_tsp!(two_opt, "greedy_twoopt", true, TSP_FILE_TS225);
+    }
+
+    #[bench]
+    fn twoopt_berlin_bench(b: &mut Bencher) {
+        b.iter(|| twoopt_berlin());
     }
 }

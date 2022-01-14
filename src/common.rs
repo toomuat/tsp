@@ -10,7 +10,7 @@ pub fn distance(v1: (f32, f32), v2: (f32, f32)) -> i32 {
     ((v1.0 - v2.0).powf(2.0) + (v1.1 - v2.1).powf(2.0)).sqrt() as i32
 }
 
-pub fn total_distance(cities: &Vec<(f32, f32)>) -> i32 {
+pub fn total_distance(cities: &[(f32, f32)]) -> i32 {
     (0..cities.len() - 1).fold(0, |sum, i| sum + distance(cities[i], cities[i + 1]))
 }
 
@@ -32,12 +32,14 @@ pub fn save_image(
         .unwrap()
         .write_all(cmd.as_bytes())
         .unwrap();
+
+    replot(gp, cities, visit_cities);
 }
 
 pub fn replot(
     gp: &mut std::process::Child,
     cities: Vec<(f32, f32)>,
-    optimal_path: Vec<(f32, f32)>,
+    visit_cities: Vec<(f32, f32)>,
 ) {
     // Plot all cities
     for city in cities.iter() {
@@ -54,7 +56,7 @@ pub fn replot(
     gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 
     // Plot optimal pass
-    for city in optimal_path.iter() {
+    for city in visit_cities.iter() {
         let cmd = format!("{} {}\n", city.0, city.1);
         let cmd: &str = &cmd;
 
