@@ -20,12 +20,46 @@ pub fn save_image(gp: &mut std::process::Child, file_name: &str) {
         "set terminal png; set output 'images/{}.png'; replot\n",
         file_name
     );
-    let cmd: &str = &cmd;
     gp.stdin
         .as_mut()
         .unwrap()
         .write_all(cmd.as_bytes())
         .unwrap();
+}
+
+pub fn replot(
+    gp: &mut std::process::Child,
+    cities: Vec<(f32, f32)>,
+    optimal_path: Vec<(f32, f32)>,
+) {
+    // Plot all cities
+    for city in cities.iter() {
+        let cmd = format!("{} {}\n", city.0, city.1);
+        let cmd: &str = &cmd;
+
+        gp.stdin
+            .as_mut()
+            .unwrap()
+            .write_all(cmd.as_bytes())
+            .unwrap();
+    }
+    // End data input
+    gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+
+    // Plot optimal pass
+    for city in optimal_path.iter() {
+        let cmd = format!("{} {}\n", city.0, city.1);
+        let cmd: &str = &cmd;
+
+        gp.stdin
+            .as_mut()
+            .unwrap()
+            .write_all(cmd.as_bytes())
+            .unwrap();
+    }
+
+    // End data input
+    gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
 }
 
 // If we enable gif output, then we can't see Gnuplot window
@@ -40,20 +74,17 @@ pub fn setup_gnuplot(
 
     let mut gp = Command::new("gnuplot")
         .stdin(Stdio::piped())
-        // .stderr(Stdio::piped())
-        // .stdout(Stdio::piped())
         .spawn()
         .expect("failed to execute gnuplot");
 
     // Slightly enlarge the x and y range covering the data.
-    let cmd = format!(
+    let mut cmd = format!(
         "set xrange [{}:{}]; set yrange [{}:{}]\n",
         -max_x / 7,
         max_x + max_x / 7,
         -max_y / 7,
         max_y + max_y / 7
     );
-    let cmd: &str = &cmd;
 
     gp.stdin
         .as_mut()
@@ -61,22 +92,21 @@ pub fn setup_gnuplot(
         .write_all(cmd.as_bytes())
         .unwrap();
 
-    let mut commands: Vec<&str>;
-    let cmd = format!("set output 'images/{}.gif'\n", file_name);
-    let cmd: &str = &cmd;
-    commands = vec!["unset key\n", "set term gif animate delay 1\n", cmd];
-
-    if !enable_gif {
-        commands = vec!["unset key\n"];
+    if cfg!(feature = "plot") && enable_gif {
+        cmd = format!(
+            "unset key; set term gif animate delay 1; \
+                set output 'images/{}.gif\n",
+            file_name
+        );
+    } else {
+        cmd = "unset key\n".to_string();
     }
 
-    for cmd in commands {
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
+    gp.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(cmd.as_bytes())
+        .unwrap();
 
     gp
 }
