@@ -21,85 +21,17 @@ pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec
 
 pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
     let mut cities_idx = greedy_internal(gp, cities);
+    // In greedy_internal, start city is pushed at tail to make circle so remove it.
     cities_idx.pop();
     let city_len = cities_idx.len();
 
-    let mut visit_cities = cities_idx
     // greedy_internal returns index of cities so convert to coordinate
+    let mut visit_cities = cities_idx
         .iter()
         .map(|idx| cities[*idx])
         .collect::<Vec<(f32, f32)>>();
 
-    // Swap
-    let mut rng = thread_rng();
-    // Number of iteration
-    let mut limit = 10_000_000;
-    while limit > 0 {
-        let mut i = rng.gen_range(0..city_len);
-        let mut j = rng.gen_range(0..city_len);
-
-        if i > j {
-            std::mem::swap(&mut i, &mut j);
-        }
-
-        let x = (i + city_len - 1) % city_len;
-        let y = (j + city_len + 1) % city_len;
-
-        // Current distance
-        let d1 =
-            distance(visit_cities[x], visit_cities[i]) + distance(visit_cities[j], visit_cities[y]);
-        // Distance after swapped
-        let d2 =
-            distance(visit_cities[x], visit_cities[j]) + distance(visit_cities[i], visit_cities[y]);
-
-        if d1 > d2 && x != j && y != i {
-            if i == 0 && j == city_len - 1 {
-                visit_cities.swap(i, j);
-            } else {
-                let v = visit_cities.clone();
-                for (l, m) in (i..=j).enumerate() {
-                    visit_cities[m] = v[j - l];
-                }
-            }
-
-            let mut v = visit_cities.clone();
-            v.push(v[0]);
-            let new = total_distance(&v);
-            println!("[{}] {}", limit, new);
-
-            #[cfg(feature = "plot")]
-            {
-                let mut edges = Vec::new();
-
-                for i in 0..city_len - 1 {
-                    edges.push(vec![
-                        visit_cities[i].0,
-                        visit_cities[i].1,
-                        visit_cities[i + 1].0,
-                        visit_cities[i + 1].1,
-                    ]);
-                }
-
-                // Connect start and end city to make cycle
-                edges.push(vec![
-                    visit_cities[city_len - 1].0,
-                    visit_cities[city_len - 1].1,
-                    visit_cities[0].0,
-                    visit_cities[0].1,
-                ]);
-
-                plot2(gp, &mut edges);
-            }
-        }
-
-        limit -= 1;
-    }
-
-    dbg!(limit);
-
-    // Connect start and end city to make cycle
-    // cities_idx.push(cities_idx[0]);
-    visit_cities.push(visit_cities[0]);
+    let visit_cities = crate::two_opt::solver(gp, &mut visit_cities);
 
     println!("Total distance: {}", total_distance(&visit_cities));
 
@@ -287,7 +219,7 @@ mod tests {
     // To show Gnuplot window, we need to enable plot feature
     // `cargo test --features plot greedy::tests::plot -- --nocapture`
     #[test]
-    fn plot() {
+    fn berlin() {
         test_tsp!(solver, "greedy", false, TSP_FILE_BERLIN52);
     }
 
@@ -297,7 +229,17 @@ mod tests {
     }
 
     #[test]
-    fn twoopt_plot_all() {
+    fn twoopt_kroc() {
+        test_tsp!(two_opt, "greedy_twoopt", false, TSP_FILE_KROC100);
+    }
+
+    #[test]
+    fn twoopt_ts() {
+        test_tsp!(two_opt, "greedy_twoopt", false, TSP_FILE_TS225);
+    }
+
+    #[test]
+    fn twoopt_all() {
         test_tsp!(two_opt, "greedy_twoopt", false, TSP_FILE_BERLIN52);
         test_tsp!(two_opt, "greedy_twoopt", false, TSP_FILE_KROC100);
         test_tsp!(two_opt, "greedy_twoopt", false, TSP_FILE_TS225);
@@ -310,8 +252,9 @@ mod tests {
         test_tsp!(two_opt, "greedy_twoopt", true, TSP_FILE_TS225);
     }
 
+    // Executed 301 times
     #[bench]
-    fn twoopt_berlin_bench(b: &mut Bencher) {
+    fn bench_twoopt_berlin(b: &mut Bencher) {
         b.iter(|| twoopt_berlin());
     }
 }
