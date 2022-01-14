@@ -21,12 +21,29 @@ pub fn save_image(
     cities: Vec<(f32, f32)>,
     visit_cities: Vec<(f32, f32)>,
 ) {
+    return;
     let cmd = format!(
         "set terminal png; set output 'images/{}.png'; \
         plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
         '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
         file_name
     );
+    gp.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(cmd.as_bytes())
+        .unwrap();
+
+    replot(gp, &cities, &visit_cities);
+}
+
+pub fn plot(
+    gp: &mut std::process::Child,
+    cities: &Vec<(f32, f32)>,
+    visit_cities: &Vec<(f32, f32)>,
+) {
+    let cmd = "plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
+        '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n";
     gp.stdin
         .as_mut()
         .unwrap()

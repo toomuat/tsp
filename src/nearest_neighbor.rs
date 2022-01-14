@@ -34,7 +34,7 @@ pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec
 
     #[cfg(feature = "plot")]
     crate::common::plot(gp, cities, &visit_cities);
-
+    crate::common::plot(gp, cities, &visit_cities);
     println!("Total distance: {}", total_distance(&visit_cities));
 
     visit_cities
