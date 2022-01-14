@@ -3,17 +3,16 @@ use std::io::Write;
 
 pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
     let mut visit_cities: Vec<(f32, f32)> = Vec::new();
-    #[cfg(feature = "plot")]
     let mut all_cities = cities.clone();
 
-    let start_city = cities.remove(0);
+    let start_city = all_cities.remove(0);
     visit_cities.push(start_city);
     let mut current_city = start_city;
 
-    while !cities.is_empty() {
+    while !all_cities.is_empty() {
         let mut min_dist = i32::MAX;
 
-        let city_idx = cities.iter().enumerate().fold(0, |idx, city| {
+        let city_idx = all_cities.iter().enumerate().fold(0, |idx, city| {
             let d = distance(current_city, *city.1);
             if d < min_dist {
                 min_dist = d;
@@ -22,42 +21,23 @@ pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec
             idx
         });
 
-        let city = cities.remove(city_idx);
+        let city = all_cities.remove(city_idx);
         visit_cities.push(city);
         current_city = city;
 
         #[cfg(feature = "plot")]
-        plot(gp, &mut all_cities, &mut visit_cities);
+        crate::common::plot(gp, cities, &visit_cities);
     }
 
     // Connect start and end city to make cycle
     visit_cities.push(start_city);
 
     #[cfg(feature = "plot")]
-    plot(gp, &mut all_cities, &mut visit_cities);
+    crate::common::plot(gp, cities, &visit_cities);
 
     println!("Total distance: {}", total_distance(&visit_cities));
 
     visit_cities
-}
-
-fn plot(
-    gp: &mut std::process::Child,
-    cities: &mut Vec<(f32, f32)>,
-    visit_cities: &mut Vec<(f32, f32)>,
-) {
-    let cmd = "plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
-        '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n";
-
-    gp.stdin
-        .as_mut()
-        .unwrap()
-        .write_all(cmd.as_bytes())
-        .unwrap();
-
-    replot(gp, cities, visit_cities);
-
-    std::thread::sleep(std::time::Duration::from_millis(200));
 }
 
 #[cfg(test)]
