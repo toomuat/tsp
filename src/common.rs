@@ -15,9 +15,16 @@ pub fn total_distance(cities: &Vec<(f32, f32)>) -> i32 {
 }
 
 // Save final result of caluculated optimal pass as an image
-pub fn save_image(gp: &mut std::process::Child, file_name: &str) {
+pub fn save_image(
+    gp: &mut std::process::Child,
+    file_name: &str,
+    cities: Vec<(f32, f32)>,
+    visit_cities: Vec<(f32, f32)>,
+) {
     let cmd = format!(
-        "set terminal png; set output 'images/{}.png'; replot\n",
+        "set terminal png; set output 'images/{}.png'; \
+            plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
+            '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
         file_name
     );
     gp.stdin
@@ -143,4 +150,22 @@ pub fn load_cities(cities: &mut Vec<(f32, f32)>, tsp_file: &str) -> std::io::Res
     }
 
     Ok(())
+}
+
+#[macro_export]
+macro_rules! test_tsp {
+    ($solver:ident, $name:expr, $enable_gif:expr, $tsp_file:expr) => {
+        let mut cities: Vec<(f32, f32)> = Vec::new();
+        load_cities(&mut cities, $tsp_file).unwrap();
+
+        let tsp_name = $tsp_file.split('.').collect::<Vec<&str>>()[0];
+        let file_name = format!("{}_{}", $name, tsp_name);
+
+        let mut gp = setup_gnuplot(&mut cities, &file_name, $enable_gif);
+
+        let visit_cities = $solver(&mut gp, &mut cities);
+
+        // Save final result of optimal pass as an image
+        save_image(&mut gp, &file_name, cities, visit_cities);
+    };
 }

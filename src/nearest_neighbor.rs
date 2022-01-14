@@ -1,8 +1,9 @@
-use crate::common::{distance, total_distance};
+use crate::common::{distance, replot, total_distance};
 use std::io::Write;
 
-pub fn nearest_neighbor(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
+pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
     let mut optimal_path: Vec<(f32, f32)> = Vec::new();
+    #[cfg(feature = "plot")]
     let mut all_cities = cities.clone();
 
     let start_city = cities.remove(0);
@@ -36,6 +37,8 @@ pub fn nearest_neighbor(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32
     plot(gp, &mut all_cities, &mut optimal_path);
 
     println!("Total distance: {}", total_distance(&optimal_path));
+
+    optimal_path
 }
 
 fn plot(
@@ -52,34 +55,7 @@ fn plot(
         .write_all(cmd.as_bytes())
         .unwrap();
 
-    // Plot all cities
-    for city in cities.iter() {
-        let cmd = format!("{} {}\n", city.0, city.1);
-        let cmd: &str = &cmd;
-
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
-    // End data input
-    gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
-
-    // Plot optimal pass
-    for city in optimal_path.iter() {
-        let cmd = format!("{} {}\n", city.0, city.1);
-        let cmd: &str = &cmd;
-
-        gp.stdin
-            .as_mut()
-            .unwrap()
-            .write_all(cmd.as_bytes())
-            .unwrap();
-    }
-
-    // End data input
-    gp.stdin.as_mut().unwrap().write_all(b"e\n").unwrap();
+    replot(gp, cities.to_vec(), optimal_path.to_vec());
 
     std::thread::sleep(std::time::Duration::from_millis(200));
 }
@@ -87,38 +63,25 @@ fn plot(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::{
-        load_cities, save_image, setup_gnuplot, TSP_FILE_BERLIN52, TSP_FILE_KROC100, TSP_FILE_TS225,
+    use crate::{
+        common::{
+            load_cities, save_image, setup_gnuplot, TSP_FILE_BERLIN52, TSP_FILE_KROC100,
+            TSP_FILE_TS225,
+        },
+        test_tsp,
     };
-
-    fn test_tsp(enable_gif: bool, tsp_file: &str) {
-        let file_name = "nearest_neighbor";
-        let mut cities: Vec<(f32, f32)> = Vec::new();
-        load_cities(&mut cities, tsp_file).unwrap();
-
-        let tsp_name = tsp_file.split('.').collect::<Vec<&str>>()[0];
-        let file_name = format!("{}_{}", file_name, tsp_name);
-
-        let mut gp = setup_gnuplot(&mut cities, &file_name, enable_gif);
-
-        nearest_neighbor(&mut gp, &mut cities);
-
-        // Save final result of optimal pass as an image
-        #[cfg(feature = "plot")]
-        save_image(&mut gp, &file_name);
-    }
 
     // Gnuplot window cannot be seem with gif enabled
 
     #[test]
     fn all() {
-        test_tsp(true, TSP_FILE_BERLIN52);
-        test_tsp(true, TSP_FILE_KROC100);
-        test_tsp(true, TSP_FILE_TS225);
+        test_tsp!(solver, "nearest_neighbor", true, TSP_FILE_BERLIN52);
+        test_tsp!(solver, "nearest_neighbor", true, TSP_FILE_KROC100);
+        test_tsp!(solver, "nearest_neighbor", true, TSP_FILE_TS225);
     }
 
     #[test]
     fn plot() {
-        test_tsp(false, TSP_FILE_BERLIN52);
+        test_tsp!(solver, "nearest_neighbor", false, TSP_FILE_BERLIN52);
     }
 }

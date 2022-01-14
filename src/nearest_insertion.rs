@@ -2,7 +2,7 @@ use crate::common::{distance, total_distance};
 use std::fs::File;
 use std::io::Write;
 
-pub fn nearest_insertion(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) {
+pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
     if cfg!(feature = "plot") {
         let mut file = File::create("cities.txt").expect("Unable to create file");
         for city in cities.iter() {
@@ -48,6 +48,8 @@ pub fn nearest_insertion(gp: &mut std::process::Child, cities: &mut Vec<(f32, f3
     }
 
     println!("Total distance: {}", total_distance(&optimal_path));
+
+    optimal_path
 }
 
 fn plot(gp: &mut std::process::Child, optimal_path: &mut Vec<(f32, f32)>) {
@@ -79,38 +81,25 @@ fn plot(gp: &mut std::process::Child, optimal_path: &mut Vec<(f32, f32)>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::{
-        load_cities, save_image, setup_gnuplot, TSP_FILE_BERLIN52, TSP_FILE_KROC100, TSP_FILE_TS225,
+    use crate::{
+        common::{
+            load_cities, save_image, setup_gnuplot, TSP_FILE_BERLIN52, TSP_FILE_KROC100,
+            TSP_FILE_TS225,
+        },
+        test_tsp,
     };
-
-    fn test_tsp(enable_gif: bool, tsp_file: &str) {
-        let file_name = "nearest_insertion";
-        let mut cities: Vec<(f32, f32)> = Vec::new();
-        load_cities(&mut cities, tsp_file).unwrap();
-
-        let tsp_name = tsp_file.split('.').collect::<Vec<&str>>()[0];
-        let file_name = format!("{}_{}", file_name, tsp_name);
-
-        let mut gp = setup_gnuplot(&mut cities, &file_name, enable_gif);
-
-        nearest_insertion(&mut gp, &mut cities);
-
-        // Save final result of optimal pass as an image
-        #[cfg(feature = "plot")]
-        save_image(&mut gp, &file_name);
-    }
 
     // Gnuplot window cannot be seem with gif enabled
 
     #[test]
     fn all() {
-        test_tsp(true, TSP_FILE_BERLIN52);
-        test_tsp(true, TSP_FILE_KROC100);
-        test_tsp(true, TSP_FILE_TS225);
+        test_tsp!(solver, "nearest_insertion", true, TSP_FILE_BERLIN52);
+        test_tsp!(solver, "nearest_insertion", true, TSP_FILE_KROC100);
+        test_tsp!(solver, "nearest_insertion", true, TSP_FILE_TS225);
     }
 
     #[test]
     fn plot() {
-        test_tsp(false, TSP_FILE_BERLIN52);
+        test_tsp!(solver, "nearest_insertion", false, TSP_FILE_BERLIN52);
     }
 }
