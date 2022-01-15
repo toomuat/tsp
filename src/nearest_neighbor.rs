@@ -72,10 +72,17 @@ mod tests {
 
     // Gnuplot window cannot be seem with gif enabled
     #[test]
-    fn all() {
+    fn gif() {
         test_tsp!(solver, "nearest_neighbor", true, TSP_FILE_BERLIN52);
         test_tsp!(solver, "nearest_neighbor", true, TSP_FILE_KROC100);
         test_tsp!(solver, "nearest_neighbor", true, TSP_FILE_TS225);
+    }
+
+    #[test]
+    fn all() {
+        test_tsp!(solver, "nearest_neighbor", false, TSP_FILE_BERLIN52);
+        test_tsp!(solver, "nearest_neighbor", false, TSP_FILE_KROC100);
+        test_tsp!(solver, "nearest_neighbor", false, TSP_FILE_TS225);
     }
 
     // To show Gnuplot window, we need to enable plot feature

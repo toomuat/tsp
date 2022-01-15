@@ -21,13 +21,15 @@ pub fn save_image(
     cities: Vec<(f32, f32)>,
     visit_cities: Vec<(f32, f32)>,
 ) {
-    return;
+    // let (terminal_type, file_type) = ("pdfcairo enhanced size 8in, 6in", "pdf");
+    let (terminal_type, file_type) = ("png", "png");
     let cmd = format!(
-        "set terminal png; set output 'images/{}.png'; \
+        "set terminal {}; set output 'images/{}.{}'; \
         plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
         '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
-        file_name
+        terminal_type, file_name, file_type
     );
+
     gp.stdin
         .as_mut()
         .unwrap()
