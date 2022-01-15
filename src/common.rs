@@ -24,7 +24,7 @@ pub fn save_image(
     // let (terminal_type, file_type) = ("pdfcairo enhanced size 8in, 6in", "pdf");
     let (terminal_type, file_type) = ("png", "png");
     let cmd = format!(
-        "set terminal {}; set output 'images/{}.{}'; \
+        "set terminal {}; set output \"images/{}.{}\"; \
         plot '-' with point pointtype 7 pointsize 2 linecolor rgb 'black', \
         '-' with line linewidth 5 linetype 1 linecolor rgb 'cyan'\n",
         terminal_type, file_name, file_type
@@ -190,7 +190,7 @@ macro_rules! test_tsp {
 
         let now = std::time::Instant::now();
 
-        let visit_cities = $solver(&mut gp, &mut cities);
+        let (visit_cities, cities_idx) = $solver(&mut gp, &mut cities);
 
         // println!("{} ms", now.elapsed().as_millis());
         println!("{} us", now.elapsed().as_micros());
@@ -236,7 +236,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn replot() {
+    fn gnuplot() {
         let mut cities = vec![(-50., -50.), (-50., 0.), (-50., 50.), (50., 50.)];
         let visit_cities = vec![
             (-50., -50.),
@@ -245,7 +245,7 @@ mod tests {
             (50., 50.),
             (-50., -50.),
         ];
-        let file_name = "test_replot";
+        let file_name = "test_gnuplot";
 
         let mut gp = setup_gnuplot(&mut cities, file_name, false);
 

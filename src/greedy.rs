@@ -4,16 +4,25 @@ use std::fs::File;
 use std::io::Write;
 
 // Sort edges by distance
-pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
+pub fn solver(
+    gp: &mut std::process::Child,
+    cities: &mut Vec<(f32, f32)>,
+) -> (Vec<(f32, f32)>, Vec<usize>) {
     let cities_idx = greedy_internal(gp, cities);
 
-    cities_idx
-        .iter()
-        .map(|idx| cities[*idx])
-        .collect::<Vec<(f32, f32)>>()
+    (
+        cities_idx
+            .iter()
+            .map(|idx| cities[*idx])
+            .collect::<Vec<(f32, f32)>>(),
+        cities_idx,
+    )
 }
 
-pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
+pub fn two_opt(
+    gp: &mut std::process::Child,
+    cities: &mut Vec<(f32, f32)>,
+) -> (Vec<(f32, f32)>, Vec<usize>) {
     let mut cities_idx = greedy_internal(gp, cities);
     // In greedy_internal, start city is pushed at tail to make circle so remove it.
     cities_idx.pop();
@@ -25,7 +34,7 @@ pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Ve
         .map(|idx| cities[*idx])
         .collect::<Vec<(f32, f32)>>();
 
-    crate::two_opt::solver(gp, &mut visit_cities)
+    crate::two_opt::solver(gp, &mut visit_cities, &mut cities_idx)
 }
 
 fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<usize> {

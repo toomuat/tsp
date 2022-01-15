@@ -2,22 +2,28 @@ use crate::common::{distance, replot, total_distance};
 use std::fs::File;
 use std::io::Write;
 
-pub fn solver(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
+pub fn solver(
+    gp: &mut std::process::Child,
+    cities: &mut Vec<(f32, f32)>,
+) -> (Vec<(f32, f32)>, Vec<usize>) {
     nearest_insertion_internal(gp, cities)
 }
 
-pub fn two_opt(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
-    let mut visit_cities = nearest_insertion_internal(gp, cities);
+pub fn two_opt(
+    gp: &mut std::process::Child,
+    cities: &mut Vec<(f32, f32)>,
+) -> (Vec<(f32, f32)>, Vec<usize>) {
+    let (mut visit_cities, mut cities_idx) = nearest_insertion_internal(gp, cities);
     // In nearest_insertion_internal, start city is pushed at tail to make circle so remove it.
     visit_cities.pop();
 
-    crate::two_opt::solver(gp, &mut visit_cities)
+    crate::two_opt::solver(gp, &mut visit_cities, &mut cities_idx)
 }
 
 fn nearest_insertion_internal(
     gp: &mut std::process::Child,
     cities: &mut Vec<(f32, f32)>,
-) -> Vec<(f32, f32)> {
+) -> (Vec<(f32, f32)>, Vec<usize>) {
     if cfg!(feature = "plot") {
         let mut file = File::create("cities.txt").expect("Unable to create file");
         for city in cities.iter() {
@@ -27,15 +33,24 @@ fn nearest_insertion_internal(
         }
     }
 
-    let mut all_cities = cities.clone();
+    // Index of cities and x, y coordinate
+    // Index is for identify which pass do we follow by index of cities
+    let mut all_cities = cities
+        .clone()
+        .iter()
+        .enumerate()
+        .map(|i| (i.0, i.1 .0, i.1 .1))
+        .collect::<Vec<(usize, f32, f32)>>();
+
     let start_city = all_cities[0];
     let mut visit_cities = vec![];
+    let mut cities_idx = vec![0, 1, 2, 0];
     for _ in 0..3 {
-        visit_cities.push((all_cities[0].0, all_cities[0].1));
+        visit_cities.push((all_cities[0].1, all_cities[0].2));
         all_cities.remove(0);
     }
     // Add start city to make cycle
-    visit_cities.push(start_city);
+    visit_cities.push((start_city.1, start_city.2));
 
     // Loop over all city of current optimal path and check the distance with all the other city not included in optimal path and insert the nearest city to optimal path
     while !all_cities.is_empty() {
@@ -46,7 +61,7 @@ fn nearest_insertion_internal(
         // Serch nearest city
         for (i, visit_city) in visit_cities.iter().enumerate() {
             for (j, city) in all_cities.iter().enumerate() {
-                let dist = distance(*visit_city, *city);
+                let dist = distance(*visit_city, (city.1, city.2));
 
                 if dist < min_dist {
                     min_dist = dist;
@@ -57,7 +72,8 @@ fn nearest_insertion_internal(
         }
 
         //  Insert nearest city to cities in current optimal path
-        visit_cities.insert(insert_idx, all_cities[city_idx]);
+        visit_cities.insert(insert_idx, (all_cities[city_idx].1, all_cities[city_idx].2));
+        cities_idx.insert(insert_idx, all_cities[city_idx].0);
         all_cities.remove(city_idx);
 
         // Plot all cities in points and current optimal path in lines
@@ -65,7 +81,7 @@ fn nearest_insertion_internal(
         crate::common::plot(gp, cities, &visit_cities);
     }
 
-    visit_cities
+    (visit_cities, cities_idx)
 }
 
 #[cfg(test)]

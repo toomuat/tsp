@@ -4,7 +4,11 @@ use crate::common::{distance, total_distance};
 use std::fs::File;
 use std::io::Write;
 
-pub fn solver(gp: &mut std::process::Child, visit_cities: &mut Vec<(f32, f32)>) -> Vec<(f32, f32)> {
+pub fn solver(
+    gp: &mut std::process::Child,
+    visit_cities: &mut Vec<(f32, f32)>,
+    cities_idx: &mut Vec<usize>,
+) -> (Vec<(f32, f32)>, Vec<usize>) {
     let mut last_update_idx = 0;
     let city_len = visit_cities.len();
 
@@ -35,10 +39,13 @@ pub fn solver(gp: &mut std::process::Child, visit_cities: &mut Vec<(f32, f32)>) 
 
             if i == 0 && j == city_len - 1 {
                 visit_cities.swap(i, j);
+                cities_idx.swap(i, j);
             } else {
                 let v = visit_cities.clone();
+                let c = cities_idx.clone();
                 for (l, m) in (i..=j).enumerate() {
                     visit_cities[m] = v[j - l];
+                    cities_idx[m] = c[j - l]
                 }
             }
 
@@ -78,7 +85,7 @@ pub fn solver(gp: &mut std::process::Child, visit_cities: &mut Vec<(f32, f32)>) 
 
     // println!("Last update index: {}", last_update_idx);
 
-    visit_cities.to_vec()
+    (visit_cities.to_vec(), cities_idx.to_vec())
 }
 
 fn plot(gp: &mut std::process::Child, edges: &mut Vec<Vec<f32>>) {
