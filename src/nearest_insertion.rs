@@ -16,6 +16,7 @@ pub fn two_opt(
     let (mut visit_cities, mut cities_idx) = nearest_insertion_internal(gp, cities);
     // In nearest_insertion_internal, start city is pushed at tail to make circle so remove it.
     visit_cities.pop();
+    cities_idx.pop();
 
     crate::two_opt::solver(gp, &mut visit_cities, &mut cities_idx)
 }
@@ -114,8 +115,16 @@ mod tests {
     }
 
     #[test]
-    fn plot() {
+    fn berlin() {
         test_tsp!(solver, "nearest_insertion", false, TSP_FILE_BERLIN52);
+    }
+    #[test]
+    fn kroc() {
+        test_tsp!(solver, "nearest_insertion", false, TSP_FILE_KROC100);
+    }
+    #[test]
+    fn ts() {
+        test_tsp!(solver, "nearest_insertion", false, TSP_FILE_TS225);
     }
 
     // Debug mode is slow so 2 opt tests are recommended to run in release mode

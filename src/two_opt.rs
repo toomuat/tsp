@@ -82,6 +82,7 @@ pub fn solver(
 
     // Connect start and end city to make cycle
     visit_cities.push(visit_cities[0]);
+    cities_idx.push(cities_idx[0]);
 
     // println!("Last update index: {}", last_update_idx);
 

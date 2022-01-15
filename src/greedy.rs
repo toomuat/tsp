@@ -26,7 +26,6 @@ pub fn two_opt(
     let mut cities_idx = greedy_internal(gp, cities);
     // In greedy_internal, start city is pushed at tail to make circle so remove it.
     cities_idx.pop();
-    let city_len = cities_idx.len();
 
     // greedy_internal returns index of cities so convert to coordinate
     let mut visit_cities = cities_idx
@@ -50,13 +49,16 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
     #[cfg(feature = "plot")]
     let mut file = File::create("edges.txt").expect("Unable to create file");
 
-    // Distance and edge index
-    let mut edges: Vec<(i32, usize, usize)> = Vec::new();
-    let mut connected_edges: Vec<(usize, usize)> = Vec::new();
-    let mut count_connected = vec![0; cities.len()];
+    let city_len = cities.len();
+    // Distance between two nodes and node indexes making a edge
+    let mut edges: Vec<(i32, usize, usize)> = vec![];
+    // Pairs of node indexes making edges and they are sorted in ascending order
+    let mut connected_edges: Vec<(usize, usize)> = vec![];
+    // Count degree of nodes. Check the nodes so that no more than three edges are connected.
+    let mut count_connected = vec![0; city_len];
 
-    for i in 0..cities.len() {
-        for j in i..cities.len() {
+    for i in 0..city_len {
+        for j in i..city_len {
             if i != j {
                 edges.push((distance(cities[i], cities[j]), i, j));
             }
@@ -64,7 +66,7 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
     }
     edges.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
-    let mut uf = UnionFind::new(cities.len());
+    let mut uf = UnionFind::new(city_len);
 
     for edge in edges.iter() {
         // Check if there is cycle when connecting edge.1 and edge.2
@@ -103,11 +105,12 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
         .map(|j| j.0)
         .collect::<Vec<usize>>();
 
-    if !idx.is_empty() {
-        // uf.unite(idx[0], idx[1]);
-        connected_edges.push((idx[0], idx[1]));
+    assert_eq!(idx.len(), 2);
+    // uf.unite(idx[0], idx[1]);
+    connected_edges.push((idx[0], idx[1]));
 
-        #[cfg(feature = "plot")]
+    #[cfg(feature = "plot")]
+    {
         file.write_all(
             format!(
                 "{} {} {} {}\n",
@@ -116,22 +119,22 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
             .as_bytes(),
         )
         .expect("Unable to write data");
-    }
 
-    #[cfg(feature = "plot")]
-    plot(gp);
+        plot(gp);
+    }
 
     // Code above created pairs of edges creating cycle.
     // So we next need to get the sequence of visiting cities.
 
-    // Sequence of visiting cities
-    let mut visit_cities = vec![connected_edges[0].0, connected_edges[0].1];
+    // Sequence of indexes of visiting cities
+    let mut cities_idx = vec![connected_edges[0].0, connected_edges[0].1];
 
     connected_edges.remove(0);
 
     while !connected_edges.is_empty() {
-        let last_city = *visit_cities.last().unwrap();
+        let last_city = *cities_idx.last().unwrap();
 
+        // Search city connected to last_city
         let city = connected_edges
             .iter()
             .enumerate()
@@ -145,12 +148,11 @@ fn greedy_internal(gp: &mut std::process::Child, cities: &mut Vec<(f32, f32)>) -
             .collect::<Vec<(usize, usize)>>();
 
         assert_eq!(city.len(), 1);
-
         connected_edges.remove(city[0].0);
-        visit_cities.push(city[0].1);
+        cities_idx.push(city[0].1);
     }
 
-    visit_cities
+    cities_idx
 }
 
 fn plot(gp: &mut std::process::Child) {

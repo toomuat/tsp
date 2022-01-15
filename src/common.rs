@@ -192,9 +192,23 @@ macro_rules! test_tsp {
 
         let (visit_cities, cities_idx) = $solver(&mut gp, &mut cities);
 
-        // println!("{} ms", now.elapsed().as_millis());
-        println!("{} us", now.elapsed().as_micros());
-        // println!("{} ns", now.elapsed().as_nanos());
+        // println!(
+        //     "Total distance: {}, Elapsed time: {} ms",
+        //     total_distance(&visit_cities),
+        //     now.elapsed().as_millis()
+        // );
+        println!(
+            "Total distance: {}, Elapsed time: {} us",
+            total_distance(&visit_cities),
+            now.elapsed().as_micros()
+        );
+        // println!(
+        //     "Total distance: {}, Elapsed time: {} ns",
+        //     total_distance(&visit_cities),
+        //     now.elapsed().as_nanos()
+        // );
+        let cities_idx = cities_idx.iter().map(|i| i + 1).collect::<Vec<usize>>();
+        println!("{:?}", cities_idx);
 
         // Save final result of optimal pass as an image
         save_image(&mut gp, &file_name, cities, visit_cities);
